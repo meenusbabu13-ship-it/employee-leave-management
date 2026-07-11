@@ -1,19 +1,25 @@
+require('dotenv').config(); // <-- This MUST be line 1!
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
+const mongoose = require('mongoose');
 
 const app = express();
 
-// Tell our server to accept incoming messages safely
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Create a friendly test message when we open the server in our browser
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('🍃 Success! Connected to MongoDB Database successfully.'))
+  .catch((err) => console.error('❌ Database connection error:', err));
+
+// Test Route
 app.get('/', (req, res) => {
   res.send('Welcome! The Employee Leave Management Server is Alive and Working!');
 });
 
-// Choose a computer port to run on (Port 5000)
+// Start the server and keep it listening
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🎉 Success! Your server is running at http://localhost:${PORT}`);
