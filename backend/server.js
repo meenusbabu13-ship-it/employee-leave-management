@@ -1,4 +1,4 @@
-require('dotenv').config(); // <-- This MUST be line 1!
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -13,6 +13,9 @@ app.use(express.json());
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('🍃 Success! Connected to MongoDB Database successfully.'))
   .catch((err) => console.error('❌ Database connection error:', err));
+
+// Link your Route Files here 👇
+app.use('/api/auth', require('./routes/auth')); // <-- Add this line!
 
 // Test Route
 app.get('/', (req, res) => {
