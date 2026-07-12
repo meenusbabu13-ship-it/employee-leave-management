@@ -36,5 +36,54 @@ router.post('/register', async (req, res) => {
         res.status(500).send('Server Error');
     }
 });
+// @route   POST /api/auth/login
+// @desc    Authenticate employee & get token (Login)
+router.post('/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // 1. Check if the employee exists
+        const employee = await Employee.findOne({ email });
+        if (!employee) {
+            return res.status(400).json({ message: 'Invalid Credentials' });
+        }
+
+        // 2. Compare plain-text input password with the database hash
+        const isMatch = await bcrypt.compare(password, employee.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Invalid Credentials' });
+        }
+
+        // 3. Import jsonwebtoken
+        const jwt = require('jsonwebtoken');
+
+        // 4. Create the session payload
+        const payload = {
+            employee: {
+                id: employee.id,
+                role: employee.role
+            }
+        };
+
+        // 5. Sign the token with your .env secret
+        jwt.sign(
+            payload,
+            process.env.JWT_SECRET,
+            { expiresIn: '1d' }, // Token lasts for 1 day
+            (err, token) => {
+                if (err) throw err;
+                res.json({ 
+                    message: "Login successful!", 
+                    token, 
+                    employee: { name: employee.name, role: employee.role } 
+                });
+            }
+        );
+
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
 
 module.exports = router;
