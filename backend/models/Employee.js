@@ -18,8 +18,8 @@ const EmployeeSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['Employee', 'Admin'],
-        default: 'Employee'
+        required: [true, 'Please add a designation or working role'],
+        trim: true
     },
     department: {
         type: String,

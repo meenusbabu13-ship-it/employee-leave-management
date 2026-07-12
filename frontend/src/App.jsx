@@ -40,6 +40,10 @@ function App() {
   const [loginRole, setLoginRole] = useState('Employee'); // 'Employee' or 'Administrator'
   const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  const [departmentInput, setDepartmentInput] = useState('');
+  const [roleInput, setRoleInput] = useState('');
 
   // Toast notification state
   const [toast, setToast] = useState(null);
@@ -50,9 +54,50 @@ function App() {
     setTimeout(() => setToast(null), 4000);
   };
 
-  // Handle Login submission
-  const handleLogin = (e) => {
+  // Handle Login / Registration submission
+  const handleAuthSubmit = async (e) => {
     e.preventDefault();
+
+    if (isRegistering) {
+      if (!nameInput || !emailInput || !passwordInput || !departmentInput || !roleInput) {
+        alert('Please fill in all registration fields.');
+        return;
+      }
+
+      try {
+        const response = await fetch('http://localhost:5000/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: nameInput,
+            email: emailInput,
+            password: passwordInput,
+            department: departmentInput,
+            role: roleInput,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Registration failed.');
+        }
+
+        alert('Account created successfully! Please sign in.');
+        setIsRegistering(false);
+        setNameInput('');
+        setDepartmentInput('');
+        setRoleInput('');
+        setPasswordInput('');
+      } catch (error) {
+        alert(error.message || 'Registration failed.');
+      }
+
+      return;
+    }
+
     if (!emailInput || !passwordInput) {
       alert('Please enter your email and password.');
       return;
@@ -63,21 +108,49 @@ function App() {
         alert('Unauthorized: Invalid Administrator Credentials.');
         return;
       }
+
+      setUser({
+        email: emailInput,
+        role: 'Administrator',
+        name: 'Admin Manager'
+      });
+
+      triggerToast('Logged in successfully as Administrator!');
+      setEmailInput('');
+      setPasswordInput('');
+      return;
     }
 
-    // Dynamic display name extracted from email
-    const namePart = emailInput.split('@')[0];
-    const formattedName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: emailInput,
+          password: passwordInput,
+        }),
+      });
 
-    setUser({
-      email: emailInput,
-      role: loginRole,
-      name: loginRole === 'Administrator' ? 'Admin Manager' : `${formattedName} Bennett`
-    });
+      const data = await response.json();
 
-    triggerToast(`Logged in successfully as ${loginRole}!`);
-    setEmailInput('');
-    setPasswordInput('');
+      if (!response.ok) {
+        throw new Error(data.message || 'Invalid employee credentials.');
+      }
+
+      setUser({
+        email: data.employee?.email || emailInput,
+        role: data.employee?.role || 'Employee',
+        name: data.employee?.name || emailInput.split('@')[0]
+      });
+
+      triggerToast('Logged in successfully as Employee!');
+      setEmailInput('');
+      setPasswordInput('');
+    } catch (error) {
+      alert(error.message || 'Unable to sign in right now.');
+    }
   };
 
   // Handle Logout
@@ -131,7 +204,15 @@ function App() {
         setEmailInput={setEmailInput}
         passwordInput={passwordInput}
         setPasswordInput={setPasswordInput}
-        handleLogin={handleLogin}
+        isRegistering={isRegistering}
+        setIsRegistering={setIsRegistering}
+        nameInput={nameInput}
+        setNameInput={setNameInput}
+        departmentInput={departmentInput}
+        setDepartmentInput={setDepartmentInput}
+        roleInput={roleInput}
+        setRoleInput={setRoleInput}
+        handleAuthSubmit={handleAuthSubmit}
       />
     );
   }
@@ -170,7 +251,15 @@ function LoginGateway({
   setEmailInput, 
   passwordInput, 
   setPasswordInput, 
-  handleLogin 
+  isRegistering,
+  setIsRegistering,
+  nameInput,
+  setNameInput,
+  departmentInput,
+  setDepartmentInput,
+  roleInput,
+  setRoleInput,
+  handleAuthSubmit 
 }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-slate-100 flex items-center justify-center p-4 font-sans antialiased">
@@ -186,7 +275,9 @@ function LoginGateway({
             <Calendar className="h-7 w-7 text-white" />
           </div>
           <h2 className="text-3xl font-extrabold tracking-tight text-white">TimeOff Management</h2>
-          <p className="text-sm text-slate-400 mt-2">Sign in to access your dashboard</p>
+          <p className="text-sm text-slate-400 mt-2">
+            {isRegistering ? 'Create your employee account' : 'Sign in to access your dashboard'}
+          </p>
         </div>
 
         {/* Role Selector Card */}
@@ -241,7 +332,56 @@ function LoginGateway({
         </div>
 
         {/* Input Form */}
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleAuthSubmit} className="space-y-4">
+          {isRegistering && (
+            <>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Full Name</label>
+                <div className="relative">
+                  <User className="absolute left-4 top-3.5 h-5 w-5 text-slate-500" />
+                  <input
+                    type="text"
+                    required
+                    placeholder="Jane Doe"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    className="w-full bg-slate-950/60 border border-slate-800 focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500 rounded-2xl pl-12 pr-4 py-3 text-sm text-slate-100 placeholder-slate-650 outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Department</label>
+                <div className="relative">
+                  <Briefcase className="absolute left-4 top-3.5 h-5 w-5 text-slate-500" />
+                  <input
+                    type="text"
+                    required
+                    placeholder="HR / Engineering"
+                    value={departmentInput}
+                    onChange={(e) => setDepartmentInput(e.target.value)}
+                    className="w-full bg-slate-950/60 border border-slate-800 focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500 rounded-2xl pl-12 pr-4 py-3 text-sm text-slate-100 placeholder-slate-650 outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Designation / Working Role</label>
+                <div className="relative">
+                  <Sparkles className="absolute left-4 top-3.5 h-5 w-5 text-slate-500" />
+                  <input
+                    type="text"
+                    required
+                    placeholder="Software Engineer"
+                    value={roleInput}
+                    onChange={(e) => setRoleInput(e.target.value)}
+                    className="w-full bg-slate-950/60 border border-slate-800 focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500 rounded-2xl pl-12 pr-4 py-3 text-sm text-slate-100 placeholder-slate-650 outline-none transition-all"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Email Address</label>
             <div className="relative">
@@ -276,14 +416,22 @@ function LoginGateway({
             type="submit"
             className="w-full bg-gradient-to-r from-indigo-500 to-fuchsia-500 hover:from-indigo-600 hover:to-fuchsia-600 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] mt-6"
           >
-            Sign In as {loginRole}
+            {isRegistering ? 'Create Account' : 'Sign In'}
           </button>
         </form>
+
+        <button
+          type="button"
+          onClick={() => setIsRegistering((prev) => !prev)}
+          className="mt-4 w-full text-sm text-indigo-300 hover:text-white transition-colors underline"
+        >
+          {isRegistering ? 'Already have an account? Sign In' : "Don't have an account? Register here"}
+        </button>
 
         {/* Info Box */}
         <div className="mt-8 pt-6 border-t border-slate-800 text-center">
           <p className="text-xs text-slate-500">
-            For testing, you can input any email and password.
+            {isRegistering ? 'Create an employee profile to access the leave portal.' : 'For testing, you can input any email and password.'}
           </p>
         </div>
 
