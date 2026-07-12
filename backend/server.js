@@ -15,7 +15,8 @@ mongoose.connect(process.env.MONGO_URI)
   .catch((err) => console.error('❌ Database connection error:', err));
 
 // Link your Route Files here 👇
-app.use('/api/auth', require('./routes/auth')); // <-- Add this line!
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/leave', require('./routes/leave')); // <-- Add this line!
 
 // Test Route
 app.get('/', (req, res) => {
