@@ -6,7 +6,11 @@ const mongoose = require('mongoose');
 const app = express();
 
 // Middleware
-app.use(cors());
+const allowedOrigin = process.env.FRONTEND_URL || '*';
+app.use(cors({
+  origin: allowedOrigin === '*' ? '*' : allowedOrigin,
+  credentials: allowedOrigin !== '*'
+}));
 app.use(express.json());
 
 // Connect to MongoDB
