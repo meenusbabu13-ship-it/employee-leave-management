@@ -58,6 +58,13 @@ function App() {
       return;
     }
 
+    if (loginRole === 'Administrator') {
+      if (emailInput !== 'admin@timeoff.com' || passwordInput !== 'YourSuperSecretAdminPassword2026!') {
+        alert('Unauthorized: Invalid Administrator Credentials.');
+        return;
+      }
+    }
+
     // Dynamic display name extracted from email
     const namePart = emailInput.split('@')[0];
     const formattedName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
